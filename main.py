@@ -287,6 +287,47 @@ def run_cloudflare_optimize():
     print(cyan("=" * 40))
     print()
 
+    print(f"  {cyan('选择IP来源:')}")
+    print(f"    1. 内置标准 IP 段（海量）")
+    print(f"    2. 自定义优选池（精选 IP）")
+    print(f"    0. 返回")
+    print()
+
+    try:
+        choice = input(f"  {bold('请选择')} [1]: ").strip()
+    except EOFError:
+        return
+
+    config = load_config()
+    max_ips = config.get("ip_test_limit", 100)
+
+    if choice == "2":
+        # 直接从项目目录读取自定义池
+        pool_dir = os.path.join(os.path.dirname(__file__), "data", "ip_pool")
+        custom_file = os.path.join(pool_dir, "custom_cf.txt")
+        if not os.path.exists(custom_file):
+            print(f"  {red('自定义池文件不存在')}")
+            return
+        all_ips = []
+        with open(custom_file, "r") as f:
+            for line in f:
+                ip = line.strip()
+                if ip and not ip.startswith("#"):
+                    all_ips.append(ip)
+        print(f"  {green(f'自定义池共 {len(all_ips)} 个IP')}")
+    else:
+        print(f"\n  {cyan('正在加载内置 Cloudflare IP 段...')}")
+        all_ips = load_cloudflare_ips()
+        print(f"  {green(f'内置 IP 段共 {len(all_ips)} 个IP')}")
+
+    if not all_ips:
+        print(f"  {red('没有可用 IP')}")
+        return
+
+    import random
+    sampled_ips = random.sample(all_ips, min(max_ips, len(all_ips)))
+    print(f"  {green(f'采样 {len(sampled_ips)} 个待测IP')}")
+
     region_id = show_region_menu()
     if region_id is None:
         return
@@ -294,16 +335,6 @@ def run_cloudflare_optimize():
     region_name = get_region_name(region_id or "auto")
     print(f"\n  {green(f'目标地区: {region_name}')}")
 
-    config = load_config()
-    max_ips = config.get("ip_test_limit", 100)
-
-    print(f"\n  {cyan('正在加载Cloudflare IP池...')}")
-    all_ips = load_cloudflare_ips()
-    import random
-    sampled_ips = random.sample(all_ips, min(max_ips, len(all_ips)))
-    print(f"  {green(f'共 {len(sampled_ips)} 个待测IP (从 {len(all_ips)} 个中采样)')}")
-
-    # 继续使用通用优选流程
     _run_common_optimize(sampled_ips, region_id, region_name)
 
 
