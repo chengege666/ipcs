@@ -1,0 +1,99 @@
+{
+  "categories": [
+    {
+      "name": "Cloudflare 系列",
+      "name_en": "Cloudflare",
+      "domains": [
+        "cloudflare.com",
+        "cdnjs.cloudflare.com",
+        "developers.cloudflare.com",
+        "blog.cloudflare.com"
+      ]
+    },
+    {
+      "name": "国际 CDN 加速",
+      "name_en": "Global CDN",
+      "domains": [
+        "cdn.jsdelivr.net",
+        "unpkg.com",
+        "cdnjs.com",
+        "stackpathcdn.com",
+        "fastly.net",
+        "akamai.net"
+      ]
+    },
+    {
+      "name": "Google 服务",
+      "name_en": "Google Services",
+      "domains": [
+        "google.com",
+        "youtube.com",
+        "gstatic.com",
+        "googleapis.com",
+        "googlevideo.com",
+        "ggpht.com"
+      ]
+    },
+    {
+      "name": "微软 / Azure",
+      "name_en": "Microsoft / Azure",
+      "domains": [
+        "azure.com",
+        "microsoft.com",
+        "live.com",
+        "office.com",
+        "onenote.com",
+        "sharepoint.com"
+      ]
+    },
+    {
+      "name": "GitHub",
+      "name_en": "GitHub",
+      "domains": [
+        "github.com",
+        "githubusercontent.com",
+        "githubassets.com",
+        "objects.githubusercontent.com"
+      ]
+    },
+    {
+      "name": "流媒体",
+      "name_en": "Streaming",
+      "domains": [
+        "netflix.com",
+        "disneyplus.com",
+        "hbomax.com",
+        "twitch.tv",
+        "spotify.com"
+      ]
+    },
+    {
+      "name": "社交网络",
+      "name_en": "Social Media",
+      "domains": [
+        "twitter.com",
+        "x.com",
+        "facebook.com",
+        "instagram.com",
+        "reddit.com",
+        "telegram.org",
+        "discord.com",
+        "whatsapp.com"
+      ]
+    },
+    {
+      "name": "AI / 开发",
+      "name_en": "AI / Dev Tools",
+      "domains": [
+        "openai.com",
+        "chatgpt.com",
+        "anthropic.com",
+        "claude.ai",
+        "huggingface.co",
+        "pypi.org",
+        "npmjs.org",
+        "docker.com"
+      ]
+    }
+  ]
+}

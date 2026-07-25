@@ -1,0 +1,25 @@
+{
+  "regions": [
+    {"id": "auto", "name": "自动选择", "name_en": "Auto", "flag": "🌍"},
+    {"id": "cn", "name": "中国大陆", "name_en": "China", "flag": "🇨🇳"},
+    {"id": "hk", "name": "香港", "name_en": "Hong Kong", "flag": "🇭🇰"},
+    {"id": "tw", "name": "台湾", "name_en": "Taiwan", "flag": "🇹🇼"},
+    {"id": "jp", "name": "日本", "name_en": "Japan", "flag": "🇯🇵"},
+    {"id": "kr", "name": "韩国", "name_en": "South Korea", "flag": "🇰🇷"},
+    {"id": "sg", "name": "新加坡", "name_en": "Singapore", "flag": "🇸🇬"},
+    {"id": "us", "name": "美国", "name_en": "United States", "flag": "🇺🇸"},
+    {"id": "eu", "name": "欧洲", "name_en": "Europe", "flag": "🇪🇺"},
+    {"id": "global", "name": "全球模式", "name_en": "Global", "flag": "🌐"}
+  ],
+  "region_codes": {
+    "cn": "CN", "hk": "HK", "tw": "TW", "jp": "JP",
+    "kr": "KR", "sg": "SG", "us": "US", "eu": "EU"
+  },
+  "country_cn": {
+    "中国": "cn", "香港": "hk", "台湾": "tw", "日本": "jp",
+    "韩国": "kr", "新加坡": "sg", "美国": "us",
+    "China": "cn", "Hong Kong": "hk", "Taiwan": "tw",
+    "Japan": "jp", "Korea": "kr", "Singapore": "sg",
+    "United States": "us"
+  }
+}
