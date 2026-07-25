@@ -61,23 +61,23 @@ https://github.com/termux/termux-app/releases
 ### 一键命令
 
 ```bash
-pkg upgrade -y && pkg install -y python git curl wget dnsutils jq && pip install requests dnspython aiohttp ping3 rich geoip2 && git clone https://github.com/chengege666/ipcs && cd ipcs && python main.py
+pkg upgrade -y && pkg install -y python git curl && pip install requests dnspython ping3 rich && git clone https://github.com/chengege666/ipcs && cd ipcs && python main.py
 ```
 ### 国内环境
 
 ## 一键命令
 ```bash
-pkg upgrade -y && pkg install -y python git curl wget dnsutils jq && pip install requests dnspython aiohttp ping3 rich geoip2 && git clone https://gitee.com/chengege666/ipcs && cd ipcs && python main.py
+sed -i 's@packages.termux.dev@mirrors.ustc.edu.cn/termux@' $PREFIX/etc/apt/sources.list && pkg upgrade -y && pkg install -y python git curl && pip install -i https://mirrors.ustc.edu.cn/pypi/web/simple requests dnspython ping3 rich && git clone https://gitee.com/chengege666/ipcs && cd ipcs && python main.py
 ```
 ### 分步安装（GitHub）
 
 ```bash
 # 1. 安装 Termux 依赖（先升级所有包，避免 OpenSSL 版本过旧导致 git 报错）
 pkg upgrade -y
-pkg install -y python git curl wget dnsutils jq
+pkg install -y python git curl
 
 # 2. 安装 Python 库
-pip install requests dnspython aiohttp ping3 rich geoip2
+pip install requests dnspython ping3 rich
 
 # 3. 下载项目
 git clone https://github.com/chengege666/ipcs
@@ -93,12 +93,15 @@ cd ipcs
 ### 分步安装（国内环境）
 
 ```bash
+# 0. 切换 Termux 国内源（清华镜像），大幅提升 pkg 下载速度
+sed -i 's@packages.termux.dev@mirrors.ustc.edu.cn/termux@' $PREFIX/etc/apt/sources.list
+
 # 1. 安装 Termux 依赖
 pkg upgrade -y
-pkg install -y python git curl wget dnsutils jq
+pkg install -y python git curl
 
-# 2. 安装 Python 库
-pip install requests dnspython aiohttp ping3 rich geoip2
+# 2. 安装 Python 库（使用中科大 PyPI 镜像）
+pip install -i https://mirrors.ustc.edu.cn/pypi/web/simple requests dnspython ping3 rich
 
 # 3. 下载项目（使用 Gitee 镜像）
 git clone https://gitee.com/chengege666/ipcs
