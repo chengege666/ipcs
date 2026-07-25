@@ -79,6 +79,7 @@ git clone https://github.com/chengege666/ipcs
 cd ipcs
 ```
 # 4. 删除旧
+```bash
 cd ~/ipcs
 git pull
 python main.py
