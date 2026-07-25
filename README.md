@@ -53,6 +53,9 @@ Termux-IP-Optimizer = 一个支持全球地区选择、CDN 识别、延迟检测
 
 ---
 
+下载termux-app
+https://github.com/termux/termux-app/releases
+
 ## 快速开始
 
 ### 一键命令
