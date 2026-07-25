@@ -78,7 +78,7 @@ pip install requests dnspython aiohttp ping3 rich geoip2
 git clone https://github.com/chengege666/ipcs
 cd ipcs
 ```
-# 4. 删除旧
+# 4. 删除旧代码残留
 ```bash
 cd ~/ipcs
 git pull
