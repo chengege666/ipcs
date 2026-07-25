@@ -237,7 +237,7 @@ def run_domain_optimize():
             if geo.get("country_code", "").upper() == target_code:
                 region_score = 100
             else:
-                region_score = 30
+                continue  # 只保留目标地区的IP
 
         entry = {
             "ip": ip,
@@ -525,7 +525,7 @@ def _run_common_optimize(ip_list: List[str], region_id: str, region_name: str):
             if geo.get("country_code", "").upper() == target:
                 region_score = 100
             else:
-                region_score = 30
+                continue  # 只保留目标地区的IP
 
         entry = {
             "ip": ip,
@@ -579,6 +579,8 @@ def rank_ips_simple(ping_results, loss_results, tcp_results, region_id):
             target = get_target_code(region_id)
             if geo.get("country_code", "").upper() == target:
                 region_score = 100
+            else:
+                continue  # 只保留目标地区的IP
 
         loss = lr.get("loss_percent", 100)
         ping = pr.get("avg", 9999)
@@ -847,6 +849,8 @@ def _run_domain_quick(domain: str):
             target = get_target_code(region_id)
             if geo.get("country_code", "").upper() == target:
                 region_score = 100
+            else:
+                continue  # 只保留目标地区的IP
 
         entry = {
             "ip": ip,
