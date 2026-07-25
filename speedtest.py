@@ -29,14 +29,7 @@ TEST_URLS = {
 def get_test_url(size: str) -> Optional[str]:
     """获取可用的测试URL"""
     urls = TEST_URLS.get(size, TEST_URLS["50MB"])
-    for url in urls:
-        try:
-            import requests
-            resp = requests.head(url, timeout=5, allow_redirects=True)
-            if resp.status_code == 200:
-                return url
-        except Exception:
-            continue
+    # 直接返回第一个URL，跳过HEAD检查（Termux网络环境可能受限）
     return urls[0] if urls else None
 
 
@@ -138,7 +131,7 @@ def multi_thread_download(url: str, threads: int = 8,
 
 def speed_test(ip: str, size: str = "50MB", threads: int = 8,
                timeout: float = 30.0) -> Dict:
-    """对指定IP进行下载速度测试"""
+    """对指定IP进行下载速度测试（整体带宽测试）"""
     url = get_test_url(size)
     if not url:
         return {
@@ -148,9 +141,6 @@ def speed_test(ip: str, size: str = "50MB", threads: int = 8,
             "peak_speed": 0,
             "time": 0
         }
-
-    print(f"\n  测试下载: {url}")
-    print(f"  测试IP: {ip}")
 
     result = _http_speed_download(url, threads=threads, timeout=timeout)
 
@@ -164,7 +154,7 @@ def speed_test(ip: str, size: str = "50MB", threads: int = 8,
 
 def _http_speed_download(url: str, headers: dict = None, threads: int = 8,
                           timeout: float = 30.0) -> Dict:
-    """HTTP下载测速"""
+    """HTTP下载测速（仅首次测速显示进度）"""
     import requests
 
     if headers is None:
@@ -174,7 +164,8 @@ def _http_speed_download(url: str, headers: dict = None, threads: int = 8,
 
     try:
         start = time.time()
-        resp = requests.get(url, headers=headers, stream=True, timeout=timeout,
+        resp = requests.get(url, headers=headers,
+                            stream=True, timeout=timeout,
                             allow_redirects=True)
         resp.raise_for_status()
 

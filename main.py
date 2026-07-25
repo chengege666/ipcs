@@ -200,24 +200,27 @@ def run_domain_optimize():
     print_step(5, 6, "TCP连接测试")
     tcp_results = batch_test_tcp(reachable_ips)
 
-    # 8. 下载测速（对排名靠前的IP）
+    # 8. 下载速度测试（整体带宽测试，只测一次）
     print_step(6, 6, "下载速度测试")
     ranked = rank_ips_simple(ping_results, loss_results, tcp_results, region_id)
 
-    top_n = min(5, len(ranked))
-    speed_results = {}
-    for ip_data in ranked[:top_n]:
-        ip = ip_data["ip"]
-        print(f"\n  测速IP: {ip}")
-        speed_result = speed_test(
-            ip,
-            size=config.get("download_size", "50MB"),
-            threads=config.get("threads", 8)
-        )
-        speed_results[ip] = speed_result
-        if not speed_result.get("error"):
-            print_speed_result(speed_result)
-        print()
+    # 取第一个可达IP做下载测速（结果共享给所有IP）
+    first_ip = ranked[0]["ip"] if ranked else reachable_ips[0]
+    print(f"\n  测试下载带宽: {first_ip}")
+    speed_result = speed_test(
+        first_ip,
+        size=config.get("download_size", "50MB"),
+        threads=config.get("threads", 8)
+    )
+
+    # 只打印一次测速结果
+    common_speed = 0
+    if not speed_result.get("error"):
+        print_speed_result(speed_result)
+        common_speed = speed_result.get("avg_speed", 0)
+    else:
+        print(f"  {yellow('测速跳过（不影响综合评分）')}")
+    print()
 
     # 9. 综合评分与排名
     all_results = []
@@ -244,19 +247,13 @@ def run_domain_optimize():
             "loss_percent": lr.get("loss_percent", 100),
             "loss": lr.get("loss_percent", 100),
             "tcp_time": tr.get("best_time"),
-            "download_speed": 0,
-            "avg_speed": 0,
+            "download_speed": common_speed,
+            "avg_speed": common_speed,
             "region_match": region_score,
             "region_score": region_score,
             "stability_score": 50,
             "jitter": pr.get("jitter", 0)
         }
-
-        # 补充测速结果
-        if ip in speed_results:
-            sr = speed_results[ip]
-            entry["download_speed"] = sr.get("avg_speed", 0)
-            entry["avg_speed"] = sr.get("avg_speed", 0)
 
         all_results.append(entry)
 
