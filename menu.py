@@ -1,5 +1,6 @@
 """交互菜单模块"""
 
+import os
 import sys
 from typing import Optional
 
@@ -20,6 +21,7 @@ def show_main_menu() -> Optional[str]:
     print("  " + cyan("6. 历史记录"))
     print("  " + cyan("7. 配置管理"))
     print("  " + cyan("8. 地区管理"))
+    print("  " + cyan("9. 配置快捷启动"))
     print()
     print("  " + red("0. 退出"))
     print()
@@ -32,6 +34,51 @@ def show_main_menu() -> Optional[str]:
     except (EOFError, KeyboardInterrupt):
         print()
         return "0"
+
+
+def setup_shortcut():
+    """配置 Termux 快捷启动命令"""
+    shortcut_path = "/data/data/com.termux/files/usr/bin/ipcs"
+    project_dir = os.path.dirname(os.path.abspath(__file__))
+
+    print()
+    print(cyan("=" * 40))
+    print(cyan("  配置快捷启动"))
+    print(cyan("=" * 40))
+    print()
+
+    # 检测是否在 Termux 环境
+    if not os.path.exists("/data/data/com.termux"):
+        print(f"  {yellow('非 Termux 环境，跳过配置')}")
+        print(f"  {yellow('可手动创建别名: alias ipcs=\"python {project_dir}/main.py\"')}")
+        return
+
+    # 检查是否已配置
+    if os.path.exists(shortcut_path):
+        print(f"  {green('✓ 快捷启动已配置')}")
+        print(f"  命令: {yellow('ipcs')}")
+        print()
+        try:
+            choice = input(f"  {bold('是否重新创建?')} [y/N]: ").strip().lower()
+            if choice not in ("y", "yes"):
+                return
+        except EOFError:
+            return
+
+    try:
+        with open(shortcut_path, "w") as f:
+            f.write(f'cd {project_dir} && exec python main.py "$@"\n')
+        os.chmod(shortcut_path, 0o755)
+        print(f"\n  {green('✓ 快捷启动已创建!')}")
+        print(f"  以后在 Termux 直接输入: {yellow('ipcs')}")
+        print()
+        print(f"  {yellow('提示: 如果别名不生效，执行 \"hash -r\" 或重启 Termux')}")
+    except PermissionError:
+        print(f"\n  {red('✗ 权限不足，请手动创建:')}")
+        print(f"    echo 'cd {project_dir} && python main.py' > {shortcut_path}")
+        print(f"    chmod +x {shortcut_path}")
+    except Exception as e:
+        print(f"\n  {red(f'✗ 创建失败: {e}')}")
 
 
 def show_config_menu(config):

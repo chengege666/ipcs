@@ -20,7 +20,7 @@ from utils import (
     check_dependencies
 )
 from config import load_config, save_config, update_config
-from menu import show_main_menu, show_config_menu
+from menu import show_main_menu, show_config_menu, setup_shortcut
 from region import (
     show_region_menu, auto_detect_region, confirm_region,
     get_region_name, get_regions
@@ -630,6 +630,8 @@ def main():
                 show_config_menu(config)
             elif choice == "8":
                 run_region_management()
+            elif choice == "9":
+                setup_shortcut()
             else:
                 print(f"\n  {yellow('无效选择，请重新输入')}")
         except KeyboardInterrupt:
