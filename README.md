@@ -61,20 +61,20 @@ https://github.com/termux/termux-app/releases
 ### 一键命令
 
 ```bash
-pkg update && pkg install -y python git curl wget dnsutils jq && pip install requests dnspython aiohttp ping3 rich geoip2 && git clone https://github.com/chengege666/ipcs && cd ipcs && python main.py
+pkg upgrade -y && pkg install -y python git curl wget dnsutils jq && pip install requests dnspython aiohttp ping3 rich geoip2 && git clone https://github.com/chengege666/ipcs && cd ipcs && python main.py
 ```
 ### 国内环境
 
 ## 一键命令
 ```bash
-pkg update && pkg install -y python git curl wget dnsutils jq && pip install requests dnspython aiohttp ping3 rich geoip2 && git clone https://gitee.com/chengege666/ipcs && cd ipcs && python main.py
+pkg upgrade -y && pkg install -y python git curl wget dnsutils jq && pip install requests dnspython aiohttp ping3 rich geoip2 && git clone https://gitee.com/chengege666/ipcs && cd ipcs && python main.py
 ```
-### 分步安装
+### 分步安装（GitHub）
 
 ```bash
-# 1. 安装 Termux 依赖
-pkg update
-pkg install python git curl wget dnsutils jq
+# 1. 安装 Termux 依赖（先升级所有包，避免 OpenSSL 版本过旧导致 git 报错）
+pkg upgrade -y
+pkg install -y python git curl wget dnsutils jq
 
 # 2. 安装 Python 库
 pip install requests dnspython aiohttp ping3 rich geoip2
@@ -83,6 +83,34 @@ pip install requests dnspython aiohttp ping3 rich geoip2
 git clone https://github.com/chengege666/ipcs
 cd ipcs
 ```
+> **⚠️ 如果 git clone 报错：** `cannot locate symbol "SSL_set_quic_tls_transport_params"`  
+> 原因是 ngtcp2 与 OpenSSL 版本不匹配，运行以下命令修复：
+> ```bash
+> pkg reinstall openssl ngtcp2 git -y
+> ```
+> 然后重新执行 `git clone`。
+
+### 分步安装（国内环境）
+
+```bash
+# 1. 安装 Termux 依赖
+pkg upgrade -y
+pkg install -y python git curl wget dnsutils jq
+
+# 2. 安装 Python 库
+pip install requests dnspython aiohttp ping3 rich geoip2
+
+# 3. 下载项目（使用 Gitee 镜像）
+git clone https://gitee.com/chengege666/ipcs
+cd ipcs
+```
+> **⚠️ 如果 git clone 报错：** `cannot locate symbol "SSL_set_quic_tls_transport_params"`  
+> 运行以下命令修复：
+> ```bash
+> pkg reinstall openssl ngtcp2 git -y
+> ```
+> 然后重新执行 `git clone`。
+
 # 4. 删除旧代码残留
 ```bash
 cd ~/ipcs
