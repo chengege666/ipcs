@@ -24,6 +24,7 @@ def show_main_menu() -> Optional[str]:
     print("  " + cyan("9. 配置快捷启动"))
     print()
     print("  " + red("0. 退出"))
+    print("  " + red("x. 卸载工具"))
     print()
     print(cyan("-" * 40))
     print()
@@ -79,6 +80,66 @@ def setup_shortcut():
         print(f"    chmod +x {shortcut_path}")
     except Exception as e:
         print(f"\n  {red(f'✗ 创建失败: {e}')}")
+
+
+def uninstall():
+    """卸载工具 - 删除项目文件、配置、快捷命令"""
+    print()
+    print(cyan("=" * 40))
+    print(cyan("  卸载 Termux IP 优选工具"))
+    print(cyan("=" * 40))
+    print()
+    print(f"  {red('将删除以下内容:')}")
+    print(f"    - 项目文件")
+    print(f"    - 配置数据 (~/.ip_optimizer)")
+    print(f"    - 快捷命令 (ipcs)")
+    print()
+
+    try:
+        confirm = input(f"  {bold('确定要卸载?')} [y/N]: ").strip().lower()
+    except EOFError:
+        return
+
+    if confirm not in ("y", "yes"):
+        print(f"\n  {green('已取消')}")
+        return
+
+    # 删除快捷命令
+    shortcut = "/data/data/com.termux/files/usr/bin/ipcs"
+    if os.path.exists(shortcut):
+        try:
+            os.remove(shortcut)
+            print(f"  ✓ 已删除快捷命令: ipcs")
+        except Exception as e:
+            print(f"  ✗ 删除快捷命令失败: {e}")
+
+    # 删除配置目录
+    config_dir = os.path.expanduser("~/.ip_optimizer")
+    if os.path.exists(config_dir):
+        import shutil
+        try:
+            shutil.rmtree(config_dir)
+            print(f"  ✓ 已删除配置数据")
+        except Exception as e:
+            print(f"  ✗ 删除配置失败: {e}")
+
+    # 删除项目文件
+    project_dir = os.path.dirname(os.path.abspath(__file__))
+    if os.path.exists(project_dir):
+        import shutil
+        try:
+            os.chdir(os.path.expanduser("~"))
+            shutil.rmtree(project_dir)
+            print(f"  ✓ 已删除项目文件")
+        except Exception as e:
+            print(f"  ✗ 删除项目文件失败: {e}")
+
+    print()
+    print(cyan("=" * 40))
+    print(f"  {green('卸载完成!')}")
+    print(cyan("=" * 40))
+    print()
+    sys.exit(0)
 
 
 def show_config_menu(config):
