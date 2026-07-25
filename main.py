@@ -33,7 +33,7 @@ from ip_scan import (
 from ping_test import ping_batch
 from packet_loss import batch_detect_loss, get_loss_grade
 from tcp_test import batch_test_tcp
-from speedtest import speed_test, speed_test_with_host, print_speed_result
+from speedtest import speed_test, print_speed_result
 from stability import speed_stability_test
 from geoip import get_geo_info, print_geo_info, detect_region
 from ranking import rank_ips, print_ranking
@@ -209,9 +209,8 @@ def run_domain_optimize():
     for ip_data in ranked[:top_n]:
         ip = ip_data["ip"]
         print(f"\n  测速IP: {ip}")
-        speed_result = speed_test_with_host(
+        speed_result = speed_test(
             ip,
-            hostname=domain,
             size=config.get("download_size", "50MB"),
             threads=config.get("threads", 8)
         )
