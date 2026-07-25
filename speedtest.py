@@ -1,189 +1,121 @@
 """下载速度测试模块"""
 
 import time
-import threading
+import subprocess
+import re
 from typing import Dict, List, Optional
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from utils import format_speed, print_progress, green, yellow, red
+from utils import format_speed, green, yellow, red
 
 
-# 测试用URL列表（可公开访问的大文件）
-TEST_URLS = {
-    "10MB": [
-        "http://speedtest.tele2.net/10MB.zip",
-        "https://proof.ovh.net/files/10Mb.dat",
-        "http://speedtest.ftp.otenet.gr/files/test10Mb.db"
-    ],
+# Cloudflare 下载测速地址
+CF_SPEED_URLS = [
+    "https://speed.cloudflare.com/__down?bytes=50000000",
+    "https://speed.cloudflare.com/__down?bytes=104857600",
+]
+
+# 通用测速地址（备用，不用 IP 绑定）
+FALLBACK_URLS = {
     "50MB": [
-        "http://speedtest.tele2.net/50MB.zip",
-        "https://proof.ovh.net/files/50Mb.dat"
+        "https://proof.ovh.net/files/50Mb.dat",
     ],
     "100MB": [
-        "http://speedtest.tele2.net/100MB.zip",
-        "https://proof.ovh.net/files/100Mb.dat"
+        "https://proof.ovh.net/files/100Mb.dat",
     ]
 }
 
 
-def get_test_url(size: str) -> Optional[str]:
-    """获取可用的测试URL"""
-    urls = TEST_URLS.get(size, TEST_URLS["50MB"])
-    # 直接返回第一个URL，跳过HEAD检查（Termux网络环境可能受限）
-    return urls[0] if urls else None
-
-
-def download_speed(url: str, timeout: float = 30.0) -> Dict:
-    """单线程下载测速"""
-    start = time.time()
-    downloaded = 0
-    speeds = []
-
-    try:
-        import requests
-        resp = requests.get(url, stream=True, timeout=timeout)
-        resp.raise_for_status()
-
-        for chunk in resp.iter_content(chunk_size=65536):
-            if chunk:
-                downloaded += len(chunk)
-                elapsed = time.time() - start
-                if elapsed > 0:
-                    current_speed = downloaded / elapsed
-                    speeds.append(current_speed)
-
-    except Exception:
-        pass
-
-    elapsed = time.time() - start
-    avg_speed = downloaded / elapsed if elapsed > 0 else 0
-
-    return {
-        "downloaded": downloaded,
-        "time": elapsed,
-        "avg_speed": avg_speed,
-        "speeds": speeds
-    }
-
-
-def multi_thread_download(url: str, threads: int = 8,
-                          timeout: float = 30.0) -> Dict:
-    """多线程下载测速"""
-    # 先获取文件大小
-    file_size = 0
-    try:
-        import requests
-        resp = requests.head(url, timeout=5)
-        file_size = int(resp.headers.get("content-length", 0))
-    except Exception:
-        pass
-
-    if file_size == 0:
-        return download_speed(url, timeout)
-
-    chunk_size = file_size // threads
-    results = []
-    lock = threading.Lock()
-    start_time = time.time()
-    stop_event = threading.Event()
-
-    def download_chunk(start_byte, end_byte):
-        downloaded = 0
-        try:
-            import requests
-            headers = {"Range": f"bytes={start_byte}-{end_byte}"}
-            resp = requests.get(url, headers=headers, stream=True,
-                                timeout=timeout)
-            for chunk in resp.iter_content(chunk_size=65536):
-                if stop_event.is_set():
-                    break
-                if chunk:
-                    downloaded += len(chunk)
-                    with lock:
-                        results.append(len(chunk))
-        except Exception:
-            pass
-        return downloaded
-
-    thread_pool = []
-    for i in range(threads):
-        s = i * chunk_size
-        e = s + chunk_size - 1 if i < threads - 1 else file_size - 1
-        t = threading.Thread(target=download_chunk, args=(s, e))
-        thread_pool.append(t)
-        t.start()
-
-    for t in thread_pool:
-        t.join()
-
-    elapsed = time.time() - start_time
-    total_downloaded = sum(results)
-    avg_speed = total_downloaded / elapsed if elapsed > 0 else 0
-
-    return {
-        "downloaded": total_downloaded,
-        "time": elapsed,
-        "avg_speed": avg_speed,
-        "file_size": file_size,
-        "threads": threads
-    }
+def get_cf_test_url(size: str = "50MB") -> str:
+    """获取 Cloudflare 下载测速 URL"""
+    if size == "100MB":
+        return "https://speed.cloudflare.com/__down?bytes=104857600"
+    return "https://speed.cloudflare.com/__down?bytes=50000000"
 
 
 def speed_test(ip: str, size: str = "50MB", threads: int = 8,
                timeout: float = 30.0) -> Dict:
-    """对指定IP进行下载速度测试（整体带宽测试）"""
-    url = get_test_url(size)
-    if not url:
-        return {
-            "ip": ip,
-            "error": "无可用测试源",
-            "avg_speed": 0,
-            "peak_speed": 0,
-            "time": 0
-        }
+    """对指定IP进行下载速度测试（使用 curl --resolve 绑定域名到IP）"""
+    url = get_cf_test_url(size)
 
-    result = _http_speed_download(url, threads=threads, timeout=timeout)
+    # 用 curl --resolve 把 speed.cloudflare.com 绑定到指定 IP
+    domain = "speed.cloudflare.com"
+    resolve_arg = f"{domain}:443:{ip}"
 
-    result["ip"] = ip
-    result["peak_speed"] = max(result.get("speeds", [result.get("avg_speed", 0)])) if result.get("speeds") else result.get("avg_speed", 0)
-    result["size"] = size
-    result["threads"] = threads if threads > 1 else 1
+    result = {
+        "ip": ip,
+        "avg_speed": 0,
+        "peak_speed": 0,
+        "downloaded": 0,
+        "time": 0,
+        "speeds": [],
+        "size": size
+    }
 
-    return result
+    # 先测试 curl 是否可用
+    try:
+        subprocess.run(["curl", "--version"], capture_output=True, timeout=5)
+    except FileNotFoundError:
+        result["error"] = "未安装 curl，请执行: pkg install curl"
+        return result
 
-
-def _http_speed_download(url: str, headers: dict = None, threads: int = 8,
-                          timeout: float = 30.0) -> Dict:
-    """HTTP下载测速（仅首次测速显示进度）"""
-    import requests
-
-    if headers is None:
-        headers = {}
-
-    result = {"downloaded": 0, "time": 0, "avg_speed": 0, "speeds": []}
+    # 构造 curl 命令
+    # --resolve 绑定域名到IP
+    # -o /dev/null 不保存文件
+    # -s 静默模式
+    # -w 输出速度信息
+    # --connect-timeout 连接超时
+    # --max-time 总超时
+    cmd = [
+        "curl",
+        "--resolve", resolve_arg,
+        "-o", "/dev/null",
+        "-s",
+        "-w", "%{speed_download}\n%{time_total}\n%{size_download}\n%{http_code}",
+        "--connect-timeout", "10",
+        "--max-time", str(timeout),
+        url
+    ]
 
     try:
-        start = time.time()
-        resp = requests.get(url, headers=headers,
-                            stream=True, timeout=timeout,
-                            allow_redirects=True)
-        resp.raise_for_status()
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout + 5)
 
-        downloaded = 0
-        speeds = []
-        for chunk in resp.iter_content(chunk_size=65536):
-            if chunk:
-                downloaded += len(chunk)
-                elapsed = time.time() - start
-                if elapsed > 0:
-                    speeds.append(downloaded / elapsed)
+        if proc.returncode != 0:
+            stderr = proc.stderr.strip()
+            if "resolve" in stderr.lower() or "could not resolve" in stderr.lower():
+                result["error"] = f"DNS 解析失败"
+            elif "timeout" in stderr.lower():
+                result["error"] = f"连接超时"
+            elif "connection refused" in stderr.lower():
+                result["error"] = f"连接被拒绝"
+            else:
+                result["error"] = stderr[:100] if stderr else f"curl 错误({proc.returncode})"
+            return result
 
-        total_time = time.time() - start
-        result["downloaded"] = downloaded
-        result["time"] = total_time
-        result["avg_speed"] = downloaded / total_time if total_time > 0 else 0
-        result["speeds"] = speeds
+        # 解析 curl 输出
+        lines = proc.stdout.strip().split("\n")
+        if len(lines) >= 4:
+            try:
+                speed_bps = float(lines[0])  # bytes per second
+                total_time = float(lines[1])
+                downloaded = float(lines[2])
+                http_code = lines[3].strip()
 
+                if http_code not in ("200", "206"):
+                    result["error"] = f"HTTP {http_code}"
+                    return result
+
+                # speed_download 是字节/秒，转换为 MB/s
+                speed_bps = float(lines[0])
+                result["avg_speed"] = speed_bps
+                result["downloaded"] = downloaded
+                result["time"] = total_time
+                result["peak_speed"] = speed_bps
+
+            except (ValueError, IndexError) as e:
+                result["error"] = f"解析结果失败: {e}"
+
+    except subprocess.TimeoutExpired:
+        result["error"] = "测速超时"
     except Exception as e:
         result["error"] = str(e)
 
@@ -196,9 +128,10 @@ def print_speed_result(result: Dict):
         print(f"  {red('测速失败:')} {result['error']}")
         return
 
-    print(f"  下载大小: {result.get('size', '50MB')}")
-    print(f"  下载速度: {green(format_speed(result['avg_speed']))}")
-    print(f"  峰值速度: {green(format_speed(result['peak_speed']))}")
+    speed_mb = result['avg_speed'] / (1024 * 1024)
+
+    print(f"  下载速度: {green(f'{speed_mb:.2f} MB/s')}")
     print(f"  耗时: {result['time']:.1f}s")
-    if result.get("threads"):
-        print(f"  线程数: {result['threads']}")
+    if result.get("downloaded", 0) > 0:
+        size_mb = result['downloaded'] / (1024 * 1024)
+        print(f"  下载大小: {size_mb:.1f} MB")

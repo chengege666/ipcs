@@ -442,7 +442,7 @@ def _run_common_optimize(ip_list: List[str], region_id: str, region_name: str):
         ip_list = random.sample(ip_list, max_ips)
 
     # 1. 批量Ping
-    print(f"\n  {cyan('[1/4] 延迟测试...')}")
+    print(f"\n  {cyan('[1/5] 延迟测试...')}")
     ping_count = config.get("ping_count", 5)
     ping_results = ping_batch(ip_list, count=min(ping_count, 5), max_workers=config.get("concurrent_ping", 30))
 
@@ -454,15 +454,31 @@ def _run_common_optimize(ip_list: List[str], region_id: str, region_name: str):
         return
 
     # 2. 丢包检测
-    print(f"\n  {cyan('[2/4] 丢包检测...')}")
+    print(f"\n  {cyan('[2/5] 丢包检测...')}")
     loss_results = batch_detect_loss(reachable, count=min(ping_count, 5))
 
     # 3. TCP测试
-    print(f"\n  {cyan('[3/4] TCP连接测试...')}")
+    print(f"\n  {cyan('[3/5] TCP连接测试...')}")
     tcp_results = batch_test_tcp(reachable)
 
-    # 4. 评分与排序
-    print(f"\n  {cyan('[4/4] 综合评分...')}")
+    # 4. 下载速度测试（对前5名逐个测速）
+    print(f"\n  {cyan('[4/5] 下载速度测试...')}")
+    ranked_for_speed = rank_ips_simple(ping_results, loss_results, tcp_results, region_id)
+    top_n = min(5, len(ranked_for_speed))
+
+    speed_results = {}
+    for i, ip_data in enumerate(ranked_for_speed[:top_n]):
+        ip = ip_data["ip"]
+        print(f"\n  [{i+1}/{top_n}] 测速 {ip} ...")
+        sr = speed_test(ip, timeout=15)
+        speed_results[ip] = sr.get("avg_speed", 0)
+        if not sr.get("error"):
+            print_speed_result(sr)
+        else:
+            print(f"    {yellow(sr['error'])}")
+
+    # 5. 综合评分与排名
+    print(f"\n  {cyan('[5/5] 综合评分...')}")
     all_results = []
     for ip in reachable:
         pr = ping_results.get(ip, {})
@@ -485,6 +501,8 @@ def _run_common_optimize(ip_list: List[str], region_id: str, region_name: str):
             "avg": pr.get("avg", 0),
             "loss_percent": lr.get("loss_percent", 100),
             "loss": lr.get("loss_percent", 100),
+            "download_speed": speed_results.get(ip, 0),
+            "avg_speed": speed_results.get(ip, 0),
             "region_match": region_score,
             "region_score": region_score,
             "stability_score": 50,
