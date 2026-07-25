@@ -55,27 +55,28 @@ Termux-IP-Optimizer = 一个支持全球地区选择、CDN 识别、延迟检测
 
 ## 快速开始
 
-### 1. 安装 Termux 依赖
+### 一键命令
 
 ```bash
+pkg update && pkg install -y python git curl wget dnsutils jq && pip install requests dnspython aiohttp ping3 rich geoip2 && git clone https://github.com/chengege666/ipcs && cd ipcs && python main.py
+```
+
+### 分步安装
+
+```bash
+# 1. 安装 Termux 依赖
 pkg update
 pkg install python git curl wget dnsutils jq
-```
 
-### 2. 安装 Python 库
-
-```bash
+# 2. 安装 Python 库
 pip install requests dnspython aiohttp ping3 rich geoip2
+
+# 3. 下载项目
+git clone https://github.com/chengege666/ipcs
+cd ipcs
 ```
 
-### 3. 下载或克隆项目
-
-```bash
-git clone <项目地址>
-cd ip_optimizer
-```
-
-### 4. 运行
+### 运行
 
 ```bash
 # 交互模式
