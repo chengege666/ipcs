@@ -112,5 +112,6 @@ def print_loss_result(result: Dict):
     print(f"  IP: {result['ip']}")
     print(f"  发送: {result['sent']}, 接收: {result['received']}, "
           f"丢失: {result['lost']}")
-    print(f"  丢包率: {color(f\"{result['loss_percent']:.1f}%\")}")
+    loss_str = f"{result['loss_percent']:.1f}%"
+    print(f"  丢包率: {color(loss_str)}")
     print(f"  评级: {color(grade)}")
