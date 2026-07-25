@@ -300,7 +300,6 @@ def run_cloudflare_optimize():
         return
 
     config = load_config()
-    max_ips = config.get("ip_test_limit", 100)
 
     if choice == "2":
         # 直接从项目目录读取自定义池（支持单IP和CIDR格式）
@@ -329,25 +328,30 @@ def run_cloudflare_optimize():
         all_ips = list(dict.fromkeys(all_ips))
         print(f"  {green(f'自定义池共 {len(all_ips)} 个IP (含CIDR展开)')}")
 
-        # 询问是否采样
+        # 选择测试数量
         print()
-        print(f"  {cyan('IP数量较多，是否全部测试?')}")
-        print(f"    1. 全部测试（全部IP）")
-        print(f"    2. 随机采样（默认100个）")
+        print(f"  {cyan('选择测试数量:')}")
+        print(f"    1. 快速测试（100个）")
+        print(f"    2. 自定义数量")
         print()
         try:
             mode = input(f"  {bold('请选择')} [1]: ").strip()
         except EOFError:
             return
 
+        import random
+
         if mode == "2":
-            import random
-            max_ips = config.get("ip_test_limit", 100)
-            sampled_ips = random.sample(all_ips, min(max_ips, len(all_ips)))
-            print(f"  {green(f'随机采样 {len(sampled_ips)} 个')}")
+            try:
+                n = input(f"  输入测试数量: ").strip()
+                sample_count = int(n) if n else 500
+            except ValueError:
+                sample_count = 500
+            sampled_ips = random.sample(all_ips, min(sample_count, len(all_ips)))
+            print(f"  {green(f'随机测试 {len(sampled_ips)} 个')}")
         else:
-            sampled_ips = all_ips
-            print(f"  {green(f'全部 {len(sampled_ips)} 个IP参与测试')}")
+            sampled_ips = random.sample(all_ips, min(100, len(all_ips)))
+            print(f"  {green(f'随机测试 {len(sampled_ips)} 个')}")
     else:
         print(f"\n  {cyan('正在加载内置 Cloudflare IP 段...')}")
         all_ips = load_cloudflare_ips()
@@ -357,10 +361,30 @@ def run_cloudflare_optimize():
             print(f"  {red('没有可用 IP')}")
             return
 
+        # 选择测试数量
+        print()
+        print(f"  {cyan(f'内置 IP 段共 {len(all_ips):,} 个IP')}")
+        print(f"    1. 快速测试（100个）")
+        print(f"    2. 自定义数量")
+        print()
+        try:
+            mode = input(f"  {bold('请选择')} [1]: ").strip()
+        except EOFError:
+            return
+
         import random
-        max_ips = config.get("ip_test_limit", 100)
-        sampled_ips = random.sample(all_ips, min(max_ips, len(all_ips)))
-        print(f"  {green(f'随机采样 {len(sampled_ips)} 个')}")
+
+        if mode == "2":
+            try:
+                n = input(f"  输入测试数量: ").strip()
+                sample_count = int(n) if n else 500
+            except ValueError:
+                sample_count = 500
+            sampled_ips = random.sample(all_ips, min(sample_count, len(all_ips)))
+            print(f"  {green(f'随机测试 {len(sampled_ips)} 个')}")
+        else:
+            sampled_ips = random.sample(all_ips, min(100, len(all_ips)))
+            print(f"  {green(f'随机测试 {len(sampled_ips)} 个')}")
 
     region_id = show_region_menu()
     if region_id is None:
