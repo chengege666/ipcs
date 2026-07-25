@@ -139,6 +139,18 @@ def multi_thread_download(url: str, threads: int = 8,
 def speed_test(ip: str, size: str = "50MB", threads: int = 8,
                timeout: float = 30.0) -> Dict:
     """对指定IP进行下载速度测试"""
+    return _speed_test_impl(ip, size, threads, timeout, hostname=None)
+
+
+def speed_test_with_host(ip: str, hostname: str, size: str = "50MB",
+                          threads: int = 8, timeout: float = 30.0) -> Dict:
+    """用指定Host头对IP进行下载速度测试（CDN测速用）"""
+    return _speed_test_impl(ip, size, threads, timeout, hostname=hostname)
+
+
+def _speed_test_impl(ip: str, size: str, threads: int,
+                     timeout: float, hostname: str = None) -> Dict:
+    """下载测速实现"""
     url = get_test_url(size)
     if not url:
         return {
@@ -149,23 +161,62 @@ def speed_test(ip: str, size: str = "50MB", threads: int = 8,
             "time": 0
         }
 
-    # 替换URL中的host为IP
-    import re
-    from urllib.parse import urlparse
-    parsed = urlparse(url)
-    test_url = url.replace(parsed.netloc.split(":")[0], ip)
+    test_url = url
+    headers = {}
 
-    print(f"\n  测试地址: {test_url}")
-
-    if threads > 1:
-        result = multi_thread_download(test_url, threads, timeout)
+    if hostname:
+        # 用IP直连，但带上Host头
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        test_url = url.replace(parsed.netloc.split(":")[0], ip)
+        headers["Host"] = hostname
+        print(f"\n  测试: {ip} (Host: {hostname})")
     else:
-        result = download_speed(test_url, timeout)
+        print(f"\n  测试地址: {test_url}")
+
+    # 改用 requests + headers 方式测速
+    result = _http_speed_download(test_url, headers=headers, threads=threads, timeout=timeout)
 
     result["ip"] = ip
     result["peak_speed"] = max(result.get("speeds", [result.get("avg_speed", 0)])) if result.get("speeds") else result.get("avg_speed", 0)
     result["size"] = size
     result["threads"] = threads if threads > 1 else 1
+
+    return result
+
+
+def _http_speed_download(url: str, headers: dict = None, threads: int = 8,
+                          timeout: float = 30.0) -> Dict:
+    """带自定义Header的HTTP下载测速"""
+    import requests
+
+    if headers is None:
+        headers = {}
+
+    result = {"downloaded": 0, "time": 0, "avg_speed": 0, "speeds": []}
+
+    try:
+        start = time.time()
+        resp = requests.get(url, headers=headers, stream=True, timeout=timeout)
+        resp.raise_for_status()
+
+        downloaded = 0
+        speeds = []
+        for chunk in resp.iter_content(chunk_size=65536):
+            if chunk:
+                downloaded += len(chunk)
+                elapsed = time.time() - start
+                if elapsed > 0:
+                    speeds.append(downloaded / elapsed)
+
+        total_time = time.time() - start
+        result["downloaded"] = downloaded
+        result["time"] = total_time
+        result["avg_speed"] = downloaded / total_time if total_time > 0 else 0
+        result["speeds"] = speeds
+
+    except Exception as e:
+        result["error"] = str(e)
 
     return result
 
