@@ -22,6 +22,7 @@ def show_main_menu() -> Optional[str]:
     print("  " + cyan("7. 配置管理"))
     print("  " + cyan("8. 地区管理"))
     print("  " + cyan("9. 配置快捷启动"))
+    print("  " + cyan("u. 检查更新"))
     print()
     print("  " + red("0. 退出"))
     print("  " + red("x. 卸载工具"))

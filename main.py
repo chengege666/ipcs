@@ -572,6 +572,72 @@ def run_region_management():
     input(f"\n  {green('按回车键返回主菜单...')}")
 
 
+def run_update():
+    """检查更新"""
+    print()
+    print(cyan("=" * 40))
+    print(cyan("  检查更新"))
+    print(cyan("=" * 40))
+    print()
+
+    import subprocess
+    import os
+
+    project_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(project_dir)
+
+    if not os.path.exists(os.path.join(project_dir, ".git")):
+        print(f"  {yellow('不是 git 仓库，无法更新')}")
+        print(f"  请重新 clone: git clone https://github.com/chengege666/ipcs")
+        input(f"\n  {green('按回车键返回主菜单...')}")
+        return
+
+    print(f"  {cyan('正在检查更新...')}")
+    print()
+
+    try:
+        # 备份配置
+        config_dir = os.path.expanduser("~/.ip_optimizer")
+        config_backup = None
+        if os.path.exists(config_dir):
+            import shutil, tempfile
+            config_backup = tempfile.mkdtemp()
+            shutil.copytree(config_dir, os.path.join(config_backup, ".ip_optimizer"))
+
+        result = subprocess.run(["git", "pull"], capture_output=True, text=True, timeout=30)
+
+        if result.returncode != 0:
+            print(f"  {red('更新失败:')}")
+            print(f"  {result.stderr}")
+            # 恢复配置
+            if config_backup:
+                backup_path = os.path.join(config_backup, ".ip_optimizer")
+                if os.path.exists(backup_path):
+                    if os.path.exists(config_dir):
+                        shutil.rmtree(config_dir)
+                    shutil.move(backup_path, config_dir)
+                shutil.rmtree(config_backup, ignore_errors=True)
+        else:
+            if "Already up to date" in result.stdout:
+                print(f"  {green('✓ 已是最新版本')}")
+            else:
+                print(f"  {green('✓ 更新完成')}")
+                print(f"  {result.stdout}")
+
+            # 清理备份
+            if config_backup:
+                shutil.rmtree(config_backup, ignore_errors=True)
+
+    except subprocess.TimeoutExpired:
+        print(f"  {red('更新超时，请检查网络')}")
+    except FileNotFoundError:
+        print(f"  {red('未找到 git 命令，请安装: pkg install git')}")
+    except Exception as e:
+        print(f"  {red(f'更新失败: {e}')}")
+
+    input(f"\n  {green('按回车键返回主菜单...')}")
+
+
 def get_target_code(region_id: str) -> str:
     """获取地区ID对应的国家代码"""
     mapping = {
@@ -632,6 +698,8 @@ def main():
                 run_region_management()
             elif choice == "9":
                 setup_shortcut()
+            elif choice.lower() == "u":
+                run_update()
             elif choice.lower() == "x":
                 uninstall()
             else:
