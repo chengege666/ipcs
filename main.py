@@ -8,6 +8,7 @@ Termux-IP-Optimizer
 import sys
 import os
 import json
+import ipaddress
 import time
 from typing import List, Dict, Optional
 
@@ -302,7 +303,7 @@ def run_cloudflare_optimize():
     max_ips = config.get("ip_test_limit", 100)
 
     if choice == "2":
-        # 直接从项目目录读取自定义池
+        # 直接从项目目录读取自定义池（支持单IP和CIDR格式）
         pool_dir = os.path.join(os.path.dirname(__file__), "data", "ip_pool")
         custom_file = os.path.join(pool_dir, "custom_cf.txt")
         if not os.path.exists(custom_file):
@@ -312,21 +313,54 @@ def run_cloudflare_optimize():
         with open(custom_file, "r") as f:
             for line in f:
                 ip = line.strip()
-                if ip and not ip.startswith("#"):
+                if not ip or ip.startswith("#"):
+                    continue
+                # 解析 CIDR 段
+                if "/" in ip:
+                    try:
+                        network = ipaddress.ip_network(ip, strict=False)
+                        all_ips.extend([str(h) for h in network.hosts()])
+                    except ValueError:
+                        pass
+                else:
                     all_ips.append(ip)
-        print(f"  {green(f'自定义池共 {len(all_ips)} 个IP')}")
+
+        # 去重
+        all_ips = list(dict.fromkeys(all_ips))
+        print(f"  {green(f'自定义池共 {len(all_ips)} 个IP (含CIDR展开)')}")
+
+        # 询问是否采样
+        print()
+        print(f"  {cyan('IP数量较多，是否全部测试?')}")
+        print(f"    1. 全部测试（全部IP）")
+        print(f"    2. 随机采样（默认100个）")
+        print()
+        try:
+            mode = input(f"  {bold('请选择')} [1]: ").strip()
+        except EOFError:
+            return
+
+        if mode == "2":
+            import random
+            max_ips = config.get("ip_test_limit", 100)
+            sampled_ips = random.sample(all_ips, min(max_ips, len(all_ips)))
+            print(f"  {green(f'随机采样 {len(sampled_ips)} 个')}")
+        else:
+            sampled_ips = all_ips
+            print(f"  {green(f'全部 {len(sampled_ips)} 个IP参与测试')}")
     else:
         print(f"\n  {cyan('正在加载内置 Cloudflare IP 段...')}")
         all_ips = load_cloudflare_ips()
         print(f"  {green(f'内置 IP 段共 {len(all_ips)} 个IP')}")
 
-    if not all_ips:
-        print(f"  {red('没有可用 IP')}")
-        return
+        if not all_ips:
+            print(f"  {red('没有可用 IP')}")
+            return
 
-    import random
-    sampled_ips = random.sample(all_ips, min(max_ips, len(all_ips)))
-    print(f"  {green(f'采样 {len(sampled_ips)} 个待测IP')}")
+        import random
+        max_ips = config.get("ip_test_limit", 100)
+        sampled_ips = random.sample(all_ips, min(max_ips, len(all_ips)))
+        print(f"  {green(f'随机采样 {len(sampled_ips)} 个')}")
 
     region_id = show_region_menu()
     if region_id is None:
