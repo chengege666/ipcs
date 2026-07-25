@@ -63,7 +63,12 @@ https://github.com/termux/termux-app/releases
 ```bash
 pkg update && pkg install -y python git curl wget dnsutils jq && pip install requests dnspython aiohttp ping3 rich geoip2 && git clone https://github.com/chengege666/ipcs && cd ipcs && python main.py
 ```
+### 国内环境
 
+## 一键命令
+```bash
+pkg update && pkg install -y python git curl wget dnsutils jq && pip install requests dnspython aiohttp ping3 rich geoip2 && git clone https://gitee.com/chengege666/ipcs && cd ipcs && python main.py
+```
 ### 分步安装
 
 ```bash
