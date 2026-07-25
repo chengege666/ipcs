@@ -172,7 +172,8 @@ def print_ranking(ranked_ips: List[Dict], region_name: str = ""):
         best = ranked_ips[0]
         print(cyan("=" * 56))
         print(f"  {bold('推荐IP:')} {green(best['ip'])}")
-        print(f"  {bold('综合评分:')} {get_score_color(best['score'])(f\"{best['score']:.1f}/100\")}")
+        score_str = f"{best['score']:.1f}/100"
+        print(f"  {bold('综合评分:')} {get_score_color(best['score'])(score_str)}")
         print()
         print(f"  {bold('优势分析:')}")
         details = best.get("score_details", {})
