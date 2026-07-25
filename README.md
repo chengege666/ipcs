@@ -64,7 +64,14 @@ https://github.com/termux/termux-app/releases
 pkg upgrade -y && pkg install -y python git curl && pip install requests dnspython ping3 rich && git clone https://github.com/chengege666/ipcs && cd ipcs && python main.py
 ```
 ### 国内环境
-
+# 速度慢换源 
+```bash
+termux-change-repo
+```
+# 更新软件包
+```bash
+apt update
+```
 ## 一键命令
 ```bash
 sed -i 's@packages.termux.dev@mirrors.ustc.edu.cn/termux@' $PREFIX/etc/apt/sources.list && pkg upgrade -y && pkg install -y python git curl && pip install -i https://mirrors.ustc.edu.cn/pypi/web/simple requests dnspython ping3 rich && git clone https://gitee.com/chengege666/ipcs && cd ipcs && python main.py
